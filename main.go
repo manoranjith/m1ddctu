@@ -34,9 +34,9 @@ var (
 		{"(C)ontrast", "C", "contrast"},
 	}
 	presets = [][]int{
-		{30, 40},
-		{70, 20},
-		{50, 60},
+		{0, 0},
+		{50, 50},
+		{100, 100},
 	}
 )
 
@@ -69,7 +69,7 @@ func initSliders() []*Slider {
 }
 
 func initPresetDropdown() *widgets.List {
-	presetNames := []string{"<Custom>", "Preset 1", "Preset 2", "Preset 3"}
+	presetNames := []string{"<Custom>", "1: B 0, C 0", "2: B 50, C 50", "3: B 100 C 100"}
 	presetDropdown := widgets.NewList()
 	presetDropdown.Title = "Presets"
 	presetDropdown.Rows = presetNames
