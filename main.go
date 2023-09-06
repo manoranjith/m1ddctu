@@ -20,8 +20,8 @@ type Slider struct {
 }
 
 const (
-	appWidth  = 80
-	appHeight = 20
+	appWidth  = 50
+	appHeight = 8
 )
 
 var (
@@ -75,7 +75,6 @@ func initPresetDropdown() *widgets.List {
 	presetDropdown.Rows = presetNames
 	presetDropdown.SelectedRowStyle = ui.NewStyle(ui.ColorYellow, ui.ColorClear)
 	presetDropdown.WrapText = false
-	presetDropdown.SetRect(0, 0, appWidth, 0) // Set height to 3 elements
 	return presetDropdown
 }
 
@@ -83,8 +82,11 @@ func setupLayout(presetDropdown *widgets.List, sliders []*Slider) *ui.Grid {
 	grid := ui.NewGrid()
 	grid.SetRect(0, 0, appWidth, appHeight)
 	grid.Set(
-		ui.NewCol(1.0/2, ui.NewRow(1, presetDropdown)),
-		ui.NewCol(1.0/2, ui.NewRow(1.0/2, sliders[0].Gauge), ui.NewRow(1.0/2, sliders[1].Gauge)),
+		ui.NewCol(2.0/6,
+			ui.NewRow(1, presetDropdown)),
+		ui.NewCol(4.0/6,
+			ui.NewRow(1.0/2, sliders[0].Gauge),
+			ui.NewRow(1.0/2, sliders[1].Gauge)),
 	)
 	return grid
 }
@@ -104,7 +106,7 @@ func handleEvents(grid *ui.Grid, sliders []*Slider, presetDropdown *widgets.List
 			}
 			ui.Close()
 			return
-		case "<Down>", "<Up>", "<Left>", "<Right>":
+		case "<Down>", "<Up>", "<Left>", "<Right>", "j", "J", "k", "K":
 			handleArrowKeys(e.ID, sliders, &selectedSliderIndex, presetDropdown, &presetDropdownActive)
 		case "<Enter>":
 			applyPreset(presetDropdown.SelectedRow, sliders)
@@ -118,9 +120,9 @@ func handleEvents(grid *ui.Grid, sliders []*Slider, presetDropdown *widgets.List
 func handleArrowKeys(e string, sliders []*Slider, selectedSliderIndex *int, presetDropdown *widgets.List, presetDropdownActive *bool) {
 	if *presetDropdownActive {
 		switch e {
-		case "<Down>", "<Left>":
+		case "<Down>", "<Left>", "j", "J":
 			presetDropdown.ScrollDown()
-		case "<Up>", "<Right>":
+		case "<Up>", "<Right>", "k", "K":
 			presetDropdown.ScrollUp()
 		}
 		return
@@ -132,9 +134,9 @@ func handleArrowKeys(e string, sliders []*Slider, selectedSliderIndex *int, pres
 
 	delta := 0
 	switch e {
-	case "<Down>", "<Left>":
+	case "<Down>", "<Left>", "j", "J":
 		delta = -5
-	case "<Up>", "<Right>":
+	case "<Up>", "<Right>", "k", "K":
 		delta = 5
 	}
 
