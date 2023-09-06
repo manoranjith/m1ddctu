@@ -32,15 +32,11 @@ var (
 	}{
 		{"(B)rightness", "B", "luminance"},
 		{"(C)ontrast", "C", "contrast"},
-		{"(V)olume", "V", "volume"},
-		{"(R)ed", "R", "red"},
-		{"(G)reen", "G", "green"},
-		{"B(l)ue", "L", "blue"},
 	}
 	presets = [][]int{
-		{30, 40, 50, 60, 70, 80},
-		{70, 20, 80, 90, 30, 50},
-		{50, 60, 40, 10, 90, 20},
+		{30, 40},
+		{70, 20},
+		{50, 60},
 	}
 )
 
@@ -87,9 +83,8 @@ func setupLayout(presetDropdown *widgets.List, sliders []*Slider) *ui.Grid {
 	grid := ui.NewGrid()
 	grid.SetRect(0, 0, appWidth, appHeight)
 	grid.Set(
-		ui.NewRow(1.5/6, ui.NewCol(1, presetDropdown)),
-		ui.NewRow(1.0/6, ui.NewCol(1.0/3, sliders[0].Gauge), ui.NewCol(1.0/3, sliders[1].Gauge), ui.NewCol(1.0/3, sliders[2].Gauge)),
-		ui.NewRow(1.0/6, ui.NewCol(1.0/3, sliders[3].Gauge), ui.NewCol(1.0/3, sliders[4].Gauge), ui.NewCol(1.0/3, sliders[5].Gauge)),
+		ui.NewCol(1.0/2, ui.NewRow(1, presetDropdown)),
+		ui.NewCol(1.0/2, ui.NewRow(1.0/2, sliders[0].Gauge), ui.NewRow(1.0/2, sliders[1].Gauge)),
 	)
 	return grid
 }
@@ -177,13 +172,6 @@ func executeCommand(action, param string, value int) int {
 	case "get":
 		cmd = exec.Command("m1ddc", action, param)
 	case "chg":
-		if param == "red" || param == "blue" || param == "green" {
-			// m1ddc chg works differently for r,g,b
-			// it sets the value to 50 + <value>
-			// so, in order to increment/decrement, we calculate the value and then pass it.
-			currentValue := executeCommand("get", param, 0)
-			value = currentValue + value - 50
-		}
 		cmd = exec.Command("m1ddc", action, param, fmt.Sprint(value))
 	default:
 		log.Fatalf("Unsupported action: %v", action)
