@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -53,7 +55,8 @@ func main() {
 	}
 	defer ui.Close()
 
-	presets, err = loadPresetsFromFile("presets.yaml")
+	presetFile := filepath.Join(os.Getenv("HOME"), ".config", "m1ddctui", "presets.yaml")
+	presets, err = loadPresetsFromFile(presetFile)
 	if err != nil {
 		log.Fatalf("Error loading presets: %v", err)
 	}
@@ -151,6 +154,11 @@ func handleEvents(grid *ui.Grid, sliders []*Slider, presetDropdown *widgets.List
 
 		case "<Enter>":
 			applyPreset(presets[presetDropdown.SelectedRow], sliders)
+		case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9":
+			presetIndex := int(e.ID[0] - '1')
+			if presetIndex < len(presets) {
+				applyPreset(presets[presetIndex], sliders)
+			}
 		default:
 			handleSliderSelection(e.ID, sliders, &selectedSliderIndex, presetDropdown, &presetDropdownActive)
 		}
