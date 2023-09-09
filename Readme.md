@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MIT
+-->
+
 # m1ddctui
 
 m1ddctui offers a simple text based user interface for controlling the
