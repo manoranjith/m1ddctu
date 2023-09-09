@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os/exec"
 	"strconv"
@@ -10,7 +11,13 @@ import (
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
+	"gopkg.in/yaml.v2"
 )
+
+type Preset struct {
+	Brightness int `yaml:"brightness"`
+	Contrast   int `yaml:"contrast"`
+}
 
 type Slider struct {
 	Label    string
@@ -22,6 +29,9 @@ type Slider struct {
 const (
 	appWidth  = 50
 	appHeight = 8
+
+	Brightness = 0
+	Contrast   = 1
 )
 
 var (
@@ -33,28 +43,52 @@ var (
 		{"(B)rightness", "B", "luminance"},
 		{"(C)ontrast", "C", "contrast"},
 	}
-	presets = [][]int{
-		{0, 0},
-		{50, 50},
-		{100, 100},
-	}
+	presets []Preset
 )
 
 func main() {
-	if err := ui.Init(); err != nil {
+	err := ui.Init()
+	if err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
 	defer ui.Close()
 
-	sliders := initSliders()
+	presets, err = loadPresetsFromFile("presets.yaml")
+	if err != nil {
+		log.Fatalf("Error loading presets: %v", err)
+	}
+	presetNames := formatPresetNames(presets)
 
-	presetDropdown := initPresetDropdown()
+	sliders := initSliders()
+	presetDropdown := initPresetDropdown(presetNames)
 
 	grid := setupLayout(presetDropdown, sliders)
-
 	ui.Render(grid)
-
 	handleEvents(grid, sliders, presetDropdown)
+}
+
+func loadPresetsFromFile(filename string) ([]Preset, error) {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	var presets []Preset
+	err = yaml.Unmarshal(data, &presets)
+	if err != nil {
+		return nil, err
+	}
+
+	return presets, nil
+}
+
+func formatPresetNames(presets []Preset) []string {
+	var names []string
+	for i, preset := range presets {
+		name := fmt.Sprintf("%d: B %d, C %d", i+1, preset.Brightness, preset.Contrast)
+		names = append(names, name)
+	}
+	return names
 }
 
 func initSliders() []*Slider {
@@ -68,8 +102,7 @@ func initSliders() []*Slider {
 	return sliders
 }
 
-func initPresetDropdown() *widgets.List {
-	presetNames := []string{"<Custom>", "1: B 0, C 0", "2: B 50, C 50", "3: B 100 C 100"}
+func initPresetDropdown(presetNames []string) *widgets.List {
 	presetDropdown := widgets.NewList()
 	presetDropdown.Title = "Presets"
 	presetDropdown.Rows = presetNames
@@ -117,7 +150,7 @@ func handleEvents(grid *ui.Grid, sliders []*Slider, presetDropdown *widgets.List
 			}
 
 		case "<Enter>":
-			applyPreset(presetDropdown.SelectedRow, sliders)
+			applyPreset(presets[presetDropdown.SelectedRow], sliders)
 		default:
 			handleSliderSelection(e.ID, sliders, &selectedSliderIndex, presetDropdown, &presetDropdownActive)
 		}
@@ -151,14 +184,9 @@ func handleArrowKeys(e string, sliders []*Slider, selectedSliderIndex *int, pres
 	sliders[*selectedSliderIndex].Gauge.Percent = executeCommand("chg", sliders[*selectedSliderIndex].Param, delta)
 }
 
-func applyPreset(selectedPreset int, sliders []*Slider) {
-	if selectedPreset <= 0 || selectedPreset > len(presets) {
-		return
-	}
-
-	for i, value := range presets[selectedPreset-1] {
-		sliders[i].Gauge.Percent = executeCommand("set", sliders[i].Param, value)
-	}
+func applyPreset(preset Preset, sliders []*Slider) {
+	sliders[Brightness].Gauge.Percent = executeCommand("set", sliders[Brightness].Param, preset.Brightness)
+	sliders[Contrast].Gauge.Percent = executeCommand("set", sliders[Contrast].Param, preset.Contrast)
 }
 
 func handleSliderSelection(e string, sliders []*Slider, selectedSliderIndex *int, presetDropdown *widgets.List, presetDropdownActive *bool) {
@@ -189,7 +217,6 @@ func executeCommand(action, param string, value int) int {
 		log.Fatalf("Unsupported action: %v", action)
 		return 0
 	}
-	// fmt.Println(cmd.String())
 
 	var out bytes.Buffer
 	cmd.Stdout = &out
