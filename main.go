@@ -108,6 +108,14 @@ func handleEvents(grid *ui.Grid, sliders []*Slider, presetDropdown *widgets.List
 			return
 		case "<Down>", "<Up>", "<Left>", "<Right>", "j", "J", "k", "K":
 			handleArrowKeys(e.ID, sliders, &selectedSliderIndex, presetDropdown, &presetDropdownActive)
+		case "P", "p":
+			presetDropdownActive = true
+			presetDropdown.BorderStyle.Fg = ui.ColorYellow
+			for _, slider := range sliders {
+				slider.Gauge.BorderStyle.Fg = ui.ColorWhite
+				selectedSliderIndex = -1
+			}
+
 		case "<Enter>":
 			applyPreset(presetDropdown.SelectedRow, sliders)
 		default:
@@ -149,7 +157,7 @@ func applyPreset(selectedPreset int, sliders []*Slider) {
 	}
 
 	for i, value := range presets[selectedPreset-1] {
-		sliders[i].Gauge.Percent = value
+		sliders[i].Gauge.Percent = executeCommand("set", sliders[i].Param, value)
 	}
 }
 
@@ -175,6 +183,8 @@ func executeCommand(action, param string, value int) int {
 		cmd = exec.Command("m1ddc", action, param)
 	case "chg":
 		cmd = exec.Command("m1ddc", action, param, fmt.Sprint(value))
+	case "set":
+		cmd = exec.Command("m1ddc", action, param, fmt.Sprint(value))
 	default:
 		log.Fatalf("Unsupported action: %v", action)
 		return 0
@@ -189,11 +199,17 @@ func executeCommand(action, param string, value int) int {
 		return 0
 	}
 
-	ans, err := strconv.Atoi(strings.TrimSpace(out.String()))
-	if err != nil {
-		log.Printf("Error converting command output to integer: %v", err)
+	switch action {
+	case "get", "chg":
+		ans, err := strconv.Atoi(strings.TrimSpace(out.String()))
+		if err != nil {
+			log.Printf("Error converting command output to integer: %v", err)
+			return 0
+		}
+		return ans
+	case "set":
+		return value
+	default:
 		return 0
 	}
-
-	return ans
 }
