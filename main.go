@@ -159,6 +159,7 @@ func handleEvents(grid *ui.Grid, sliders []*Slider, presetDropdown *widgets.List
 			if presetIndex < len(presets) {
 				applyPreset(presets[presetIndex], sliders)
 			}
+			presetDropdown.SelectedRow = presetIndex
 		default:
 			handleSliderSelection(e.ID, sliders, &selectedSliderIndex, presetDropdown, &presetDropdownActive)
 		}
